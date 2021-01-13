@@ -25,6 +25,19 @@ where @number>1;
 set @num=1;
 create table number as
 select @num:=@num+1 as NUM from
-   information_schema_tables,
-   information_schema_tables t2,
+   information_schema.tables,
+   information_schema.tables t2
    where @num<=999;
+   
+create table number2 as
+select a.num
+from number a, number b
+where a.num%b.num=0 and a.num>b.num and b.num>1;
+
+select group_concat(a.num separator '&')
+from number a 
+where a.num not in (
+                    select * from number2);
+                    
+                    
+
