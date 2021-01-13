@@ -108,7 +108,25 @@ on start_date<end_date
 group by start_date
 order by datediff(end_date,start_date), start_date;
 
-6.
+6. Advanced Merge
+Create View total_views As
+(select challenge_id, sum(total_views) as a, sum(total_unique_views) as b from view_stats group by challenge_id);
+
+Create View Sub As
+(select challenge_id, sum(total_submissions) as c, sum(total_accepted_submissions) as d from Submission_Stats group by challenge_id);
+
+select contest_id, hacker_id, name, a,b,c,d
+from (select *  from contests 
+                    left join 
+                    colleges on contests.contest_id=colleges.contest_id
+                    left join 
+                    challenges on colleges.colleges_id=colleges.colleges_id
+                    left join 
+                    total_views on total_views.challenge_id=challenges.challenge_id
+                    left join 
+                    sub on sub.challenge_id=challenges.challenge_id
+       group by contest_id,hacker_id,name )
+where a or b or c or d;
      
 
 
