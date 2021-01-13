@@ -39,5 +39,102 @@ from number a
 where a.num not in (
                     select * from number2);
                     
-                    
+4.15 Days contest
+select t5.submission_date, t5.total, h.hacker_id, h.name
+from (
+      select submission_date, count(distinct hacker_id) total
+      from submissions s 
+      where s.submission_date='2016-03-01' or (datediff('days',s.submission_date,'2016-03-01')= (
+                                                        select count(distinct submission_date, hacker_id) from submission t2 
+                                                        where s2.submission_date< s.submission_date and s2.hacker_id=s.hacker_id)
+      group by submission_date) t5
+inner join ( select t1.submission_date, min(t1.hacker_id) hacker_id 
+              from (
+                     select submission_date, hacker_id, count(hacker_id) total
+                     from submissions
+                     group by submission_date, hacker_id) t1,
+                   (
+                     select submission_date, max(total) max_total
+                     from
+                           ( select submission, hacker_id, count(hacker_id) total
+                             from submissions
+                             group by submission_date,hacker_id) t2
+                     group by submission_date) t3
+                     where t1.submission_date=t3.submission_date and t1.total=t3.max_total
+                     group by t1.submission_date
+               ) t4  
+on t4.submission_date=t5.submission_date
+left join hackers h on h.hacker_id=t4.hacker_id;             
+###########################################                                                                                  
+With R(submission_date,hacker_id) As
+   (select distinct submission_date, hacker_id from submissions where submission_date=to_date('2016-03-01')
+    union all 
+   (select child.submission_date, child.hacker_id from R parent, submissions child
+    where parent.submission_date+1=child.submission_date and parent.hacker_id=child.hacker_id),
+Total As 
+   (select submission_date,count(distinct hacker_id) as total from R group by submission_date),
+Counter As
+   (select submission_date, hacker_id, count(hacker_id) as N from submissions group by submission_date,hacker_id),
+Maxperday As
+   (select submission_date, min(c.hacker_id) from counter c
+    where c.n= (select max(K.N) from counter K where c.submission_date=k.submission_date)
+    group by submission_date,hacker_id)
+
+Select total.submission_date,total.total,hackers.hacker_id,hackers.name from total
+join maxperday on total.submission_date=maxperday.submission_date
+join hackers on hackers.hacker_id=maxperday.hacker_id
+order by total.submission_date;
+    
+5. Project combination
+select p1.start.date, p2.end_date
+from projects p1 join projects p2 on datediff(p2.end_date,p1.start_date)=
+            (select count(*) from projects where start_date>=p1.start_date and end_date<=p2.end_date)
+            and p1.start_date-1 not in (select start_date from projects)
+            and p2.end_date+1 not in (select end_date from projects)
+order by datediff(p2.end_date,p1.start_date), p1.start_date;
+###########################################                                                       
+select start_date, min(end_date)
+from (select start_date from projects where start_date not in (select end_date from projects)) a,
+     (select end_date from projects where end_date not in (select start_date from projects)) b
+where start_date<end_date
+group by start_date
+order by datediff(end_date,start_date), start_date;
+###########################################                                                       
+select start_date, min(end_date)
+from (select start_date from projects A left join projects B on a.start_date=b.end_date where b.task_id is null) As start
+join
+     (select end_date from projects A left join projects B on a.end_date=b.start_date where b.task_id is null) As end
+on start_date<end_date
+group by start_date
+order by datediff(end_date,start_date), start_date;
+
+6.
+     
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
