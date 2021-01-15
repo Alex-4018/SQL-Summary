@@ -24,7 +24,7 @@ from
 where row_num=10
 order by user_id;
 
-4. 
+4. Two Month Amount Sum
 a. Sum by month
 select user_id, sum(transaction_amount) as total amount
 from
@@ -54,8 +54,43 @@ FROM query_four_april
 GROUP BY user_id, date) tmp
 order by user_id,date;
 
+5. Find Average and Median
+SET sql_mode = 'NO_UNSIGNED_SUBTRACTION';
+select avg(transaction_amount) as average,
+       Avg(Case when row_num_desc-row_num_asc between -1 and 1 then transaction_amount else NULL end) as Median
+from
+ (select transaction_amount, row_number() over(order by transaction_amount) as row_num_asc,
+         count(*) over() -row_number() over(order by transaction_amount) as row_num_desc
+   from query_five_users a
+   join (select *, date(transaction_date) as date_only from query_five_transactions) b
+   on a.user_id=b.user_id and a.sign_up_date=b.date_only) tmp ;
+  
+6. Largest and smallest
+a. Country with largest and smallest # of users
+Select country,count(distinct user_id) from query_six group by country order by count(user_id) desc limit 1
+union all
+Select country,count(distinct user_id) from query_six group by country order by count(user_id) asc limit 1;
+##############################
+select country, a.user_count
+from 
+   (select *, row_number() over (order by a.user_count) as count_asc,
+              row_number() over (order by a.user_count desc) as count_desc
+       from
+      (select  country, sum(distinct user_id) as user_count from query_six group by country) a) tmp
+where count_desc=1 or count_asc=1;
 
 
+b. 
+select country, user_id,created_at 
+from
+  (select *,row_number() over(partition by country order by created_at) count_asc,
+            row_number() over(partition by country order by created_at desc) count_desc
+   from query_six) tmp
+where  count_desc=1 or count_asc=1;
+
+
+
+   
 
 
 
