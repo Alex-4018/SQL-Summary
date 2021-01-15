@@ -67,16 +67,12 @@ from
   
 6. Largest and smallest
 a. Country with largest and smallest # of users
-Select country,count(distinct user_id) from query_six group by country order by count(user_id) desc limit 1
-union all
-Select country,count(distinct user_id) from query_six group by country order by count(user_id) asc limit 1;
-##############################
-select country, a.user_count
+select country, tmp.user_count
 from 
    (select *, row_number() over (order by a.user_count) as count_asc,
               row_number() over (order by a.user_count desc) as count_desc
        from
-      (select  country, sum(distinct user_id) as user_count from query_six group by country) a) tmp
+      (select  country, count(distinct user_id) as user_count from query_six group by country) a) tmp
 where count_desc=1 or count_asc=1;
 
 
