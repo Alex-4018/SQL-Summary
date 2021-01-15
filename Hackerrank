@@ -133,23 +133,115 @@ group by contests.contest_id, contests.hacker_id,contests.name
 having  sum(a)!=0  or sum(b)!=0 or sum(c)!=0 or sum(d)!=0
 order by contests.contest_id;
      
-   
+     
+     
+7. create coding challenges
+select c.hacker_id, h.name, count(c.hacker_id) as total 
+from challenges c
+inner join hackers h 
+on h.hacker_id=c.hacker_id
+group by c.hacker_id,h.name
+having total= (select max(temp1.cnt) from (select count(hacker_id) as cnt from challenges group by hacker_id) temp1
+    or total in (select temp2.cnt from (select count(hacker_id) as cnt from challenges group by hacker_id) temp2 group by temp2.cnt having count(temp2.cnt)=1)
+order by total desc,c.hacker_id;
+##################################
+select c.hacker_id, h.name, count(c.hacker_id) as total 
+from challenges c
+inner join hackers h 
+on h.hacker_id=c.hacker_id
+where c.hacker_id not in (select t1.hacker_id from 
+                                            (select hacker_id, count(*) cnt from challenges group by hacker_id) as t1 
+                                            inner join 
+                                            (select hacker_id, count(*) cnt from challenges group by hacker_id) as t2
+                                            on t1.challenge_id!=t2.challenge_id and t1.cnt=t2.cnt and t1.cnt!= (select max(cnt) from t1))
+group by c.hacker_id
+order by total desc,c.hacker_id;
 
 
+8. Median
+select round(avg(a.LAT_N),4) from station a
+where abs((select count(lat_n) from station where a.lat_n>lat_n)-(select count(lat_n) from station where a.lat_n<lat_n))<=1;
+##################################
+set @rowid=0;
+select round(avg(t.lat_n),4) from (select @rowid :=@rowid+1 as rowid, lat_n from station order by lat_n) as t
+where t.rowid in  (ceil((@rowid+1)/2), floor((@rowid+1)/2));
+##################################
+select round(avg(a.lat_n),4) from station a, station b 
+group by a.lat_n 
+having sum(sign(1-sign(b.lat_n-a.lat_n)))=ceil((count(*)+1)/2);
+##################################
+select round(avg(a.lat_n),4) from station a, station b 
+group by a.lat_n 
+having sum(sign(b.lat_n-a.lat_n))=0;
+
+9. Triangles
+Select case when A+B>C or B+C>A or A+C>B then 
+             case when A=B and B=C then 'Equilateral'
+                  when (A=B and A!=C) or  (A=C and A!=B) or (B=C and A!=B) then  'Isosceles'
+                  when A!=B and A!=C and B!=C then 'Scalene'
+       else 'Not a Triangle'
+       end
+from Triangles;
+##################################
+Select case when A+B<=C or B+C<=A or A+C<=B then 'Not a Triangle'
+            when A=B and B=C then 'Equilateral'
+            when A=B or  A=C  or B=C  then  'Isosceles'
+            else 'Scalene'
+       end
+from Triangles;
 
 
-
-
-
-
-
-
-
-
-
-
-
-
+10. Pivot Table
+select max(a.doctor), max(a.professor), max(a.singer),max(a.actor)
+from (select case when occupant='Doctor' then name end as doctor,
+             case when occupant='Professor' then name end as professor,
+             case when occupant='Singer' then name end as singer,
+             case when occupant='Actor' then name end as actor,
+             row_number() over(partition by occupation order by name) as rank
+        from occupations) as a
+group by a.rank;
+##################################
+set @drowno=0;
+set @prowno=0;
+set @srowno=0;
+set @arowno=0;
+select  max(doctor), max(professor), max(singer),max(actor) from 
+(select a.p as p,
+case when occupation='Doctor' then name else NULL end as Doctor,
+case when occupation='Professor' then name else NULL end as Professor,
+case when occupation='Singer' then name else NULL end as Singer,
+case when occupation='Actor' then name else NULL end as Actor
+from
+(select * from (select Name, Occupation, @drowno:=@drowno+1 as p from Occupations where occupation='Doctor' order by name asc) as do
+union
+select * from (select Name, Occupation, @prowno:=@prowno+1 as p from Occupations where occupation='Professor' order by name asc) as pr
+union
+select * from (select Name, Occupation, @srowno:=@srowno+1 as p from Occupations where occupation='Singer' order by name asc) as si
+union
+select * from (select Name, Occupation, @arowno:=@arowno+1 as p from Occupations where occupation='Actor' order by name asc) as ac) as a ) b
+group by b.p;
+##################################
+set @allrowno=0;
+set @drowno=0;
+set @prowno=0;
+set @srowno=0;
+set @arowno=0;
+select  d.name,p.name,s.name,a.name  
+from
+(select Name, @allrowno:=@allrowno+1 as p from Occupations order by name asc) as al
+left join
+(select Name, @drowno:=@drowno+1 as p from Occupations where occupation='Doctor' order by name asc) as d
+on al.p=d.p
+left join
+(select Name, @prowno:=@prowno+1 as p from Occupations where occupation='Professor' order by name asc) as p
+on al.p=p.p
+left join
+(select Name, @srowno:=@srowno+1 as p from Occupations where occupation='Singer' order by name asc) as s
+on al.p=s.p
+left join
+(select Name, @arowno:=@arowno+1 as p from Occupations where occupation='Actor' order by name asc) as a
+on al.p=a.p
+where d.name is not NULL or p.name is not NULL or s.name is not NULL or a.name is not NULL;
 
 
 
