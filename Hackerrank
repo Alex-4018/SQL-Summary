@@ -243,13 +243,38 @@ left join
 on al.p=a.p
 where d.name is not NULL or p.name is not NULL or s.name is not NULL or a.name is not NULL;
 
+11. Tree
+select N, case when p is null then 'Root'
+               when  n in (select p from BTS) then 'Inner'
+               else 'Leaf'
+               end;
+from BTS
+order by N;
 
 
+12. Regular Expression
+select distinct city from station where city REGEXP/RLIKE  '^[AEIOU]' order by city;(No case Sensitive)
+select distinct city from station where city REGEXP/RLIKE binary '^[AEIOU]' order by city; (Upper case)
+select distinct city from station where city REGEXP/RLIKE  '[AEIOU]$' order by city;
+select distinct city from station where city REGEXP/RLIKE  '^[AEIOU].*[AEIOU]$' order by city;
+select distinct city from station where city REGEXP/RLIKE  '^[^AEIOU]' order by city;
+select distinct city from station where city NOT REGEXP/RLIKE  '^[AEIOU]' order by city;
+select distinct city from station where city REGEXP/RLIKE  '^[^AEIOU].*[^AEIOU]$' order by city;
+select distinct city from station where city NOT REGEXP/RLIKE  '^[AEIOU]' and city NOT EXPREG/RLIKE '[AEIOU]$' order by city;
 
 
-
-
-
+13. Moving Average 
+select a.order_date,a.sale. round( select sum(b.sale)/ count(b.sale) from sales as b where datediff(a.order_date,b.order_date) between 0 and 4) ,2) as '5daymoving average'
+from sales as a
+order by a.order_date
+                                                
+14. Cumulative Totals
+select t.day, t.rental_count, @running_total:=@running_total+t.rental_total as cumulative_sum
+from
+(select date(rental_date) as day, count(rental_id) as rental_count from rental group by day) t
+join (select @running_total:=0) r 
+order by t.day;
+##########Or set @running_total=0; at the begining######
 
 
 
