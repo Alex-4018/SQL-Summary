@@ -1,0 +1,76 @@
+1. Time Difference between last and second last action for User
+select user_id, unix_timestamp- previous_timestamp as delta_lasttwo
+from (select user_id,  unix_timestamp, lag(unix_timestamp,1) over (patition by user_id order by unix_timestamp) as previous_timestamp,
+             row_number() over (patition by user_id order by unix_timestamp desc) as order_desc 
+      from query_one) tmp
+where order_desc=1
+order by user_id
+limit 5;
+      
+      
+2.  Percentage of Users Distribution   
+select 100*sum(case when T.mobile_user is null then 1 else 0 end)/count(*) as web_only,
+       100*sum(case when T.web_user is null then 1 else 0 end)/count(*) as mobile_only,
+       100*sum(case when T.web_user is not null and T.mobile_user is not null then 1 else 0 end)/count(*) as 'BOTH'
+from
+(select distinct m.user_id as mobile_user, w.user_id as web_user from data_mobile m left join data_web w on m.user_id=w.user_id
+union all
+select distinct m.user_id as mobile_user, w.user_id as web_user from data_mobile m right join data_web w on m.user_id=w.user_id where m.user_id is NULL) T;
+
+3. Define the moment User become a 'Power User' - Buy the 10th item
+select user_id, date
+from
+    (select *, row_number() over (partition by user_id order by date) row_num from query_three) tmp
+where row_num=10
+order by user_id;
+
+4. 
+a. Sum by month
+select user_id, sum(transaction_amount) as total amount
+from
+  (select * from query_four_march
+  union ll 
+  select * from query_four_april) tmp
+group by user_id
+order by user_id;
+
+b. Cumulative Sum 
+select user_id, date, sum(sum(transaction_amount)) over (partition by user_id order by date) as total_amount
+from 
+  (select * from query_four_march
+  union all 
+  select * from query_four_april) tmp
+group by user_id,date
+order by user_id,date;
+##################################
+select user_id, date, sum(amount) over (PARTITION by user_id order by date) as total_amount
+from 
+  (SELECT user_id, date, SUM(transaction_amount) as amount
+FROM query_four_march
+GROUP BY user_id, date
+UNION ALL
+SELECT user_id, date, SUM(transaction_amount) as amount
+FROM query_four_april
+GROUP BY user_id, date) tmp
+order by user_id,date;
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
