@@ -1,2 +1,2 @@
 # SQL-Summary
-SQL Solutions
+My SQL Solutions - From couples of Resource
