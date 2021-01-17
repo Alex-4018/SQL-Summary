@@ -1,4 +1,4 @@
-1.  Patter
+#1.  Patter
 select repeat('*',1) union all
 select repeat('*',2) union all
 select repeat('*',3) union all
@@ -10,7 +10,7 @@ select repeat('* ', @row := @row + 1) from information_schema.tables
 where @row < 20;
 
 
-2. Reversed Patter
+#2. Reversed Patter
 select repeat('*',5) union all
 select repeat('*',4) union all
 select repeat('*',3) union all
@@ -21,7 +21,7 @@ set @number =6;
 select repeat('*',@number:=@number-1) from information_schema.tables
 where @number>1;
 
-3. Prime numbers until 1000
+#3. Prime numbers until 1000
 set @num=1;
 create table number as
 select @num:=@num+1 as NUM from
@@ -39,7 +39,7 @@ from number a
 where a.num not in (
                     select * from number2);
                     
-4.15 Days contest
+#4.15 Days contest
 select t5.submission_date, t5.total, h.hacker_id, h.name
 from (
       select submission_date, count(distinct hacker_id) total
@@ -85,7 +85,7 @@ join maxperday on total.submission_date=maxperday.submission_date
 join hackers on hackers.hacker_id=maxperday.hacker_id
 order by total.submission_date;
     
-5. Project combination
+#5. Project combination
 select p1.start.date, p2.end_date
 from projects p1 join projects p2 on datediff(p2.end_date,p1.start_date)=
             (select count(*) from projects where start_date>=p1.start_date and end_date<=p2.end_date)
@@ -108,7 +108,7 @@ on start_date<end_date
 group by start_date
 order by datediff(end_date,start_date), start_date;
 
-6. Advanced Merge
+#6. Advanced Merge
 
 Create View total_views As
 (select challenge_id, sum(total_views) as a, sum(total_unique_views) as b from view_stats group by challenge_id);
@@ -135,7 +135,7 @@ order by contests.contest_id;
      
      
      
-7. create coding challenges
+#7. create coding challenges
 select c.hacker_id, h.name, count(c.hacker_id) as total 
 from challenges c
 inner join hackers h 
@@ -158,7 +158,7 @@ group by c.hacker_id
 order by total desc,c.hacker_id;
 
 
-8. Median
+#8. Median
 select round(avg(a.LAT_N),4) from station a
 where abs((select count(lat_n) from station where a.lat_n>lat_n)-(select count(lat_n) from station where a.lat_n<lat_n))<=1;
 ##################################
@@ -174,7 +174,7 @@ select round(avg(a.lat_n),4) from station a, station b
 group by a.lat_n 
 having sum(sign(b.lat_n-a.lat_n))=0;
 
-9. Triangles
+#9. Triangles
 Select case when A+B>C or B+C>A or A+C>B then 
              case when A=B and B=C then 'Equilateral'
                   when (A=B and A!=C) or  (A=C and A!=B) or (B=C and A!=B) then  'Isosceles'
@@ -191,7 +191,7 @@ Select case when A+B<=C or B+C<=A or A+C<=B then 'Not a Triangle'
 from Triangles;
 
 
-10. Pivot Table
+#10. Pivot Table
 select max(a.doctor), max(a.professor), max(a.singer),max(a.actor)
 from (select case when occupant='Doctor' then name end as doctor,
              case when occupant='Professor' then name end as professor,
@@ -243,7 +243,7 @@ left join
 on al.p=a.p
 where d.name is not NULL or p.name is not NULL or s.name is not NULL or a.name is not NULL;
 
-11. Tree
+#11. Tree
 select N, case when p is null then 'Root'
                when  n in (select p from BTS) then 'Inner'
                else 'Leaf'
@@ -252,7 +252,7 @@ from BTS
 order by N;
 
 
-12. Regular Expression
+#12. Regular Expression
 select distinct city from station where city REGEXP/RLIKE  '^[AEIOU]' order by city;(No case Sensitive)
 select distinct city from station where city REGEXP/RLIKE binary '^[AEIOU]' order by city; (Upper case)
 select distinct city from station where city REGEXP/RLIKE  '[AEIOU]$' order by city;
@@ -263,12 +263,12 @@ select distinct city from station where city REGEXP/RLIKE  '^[^AEIOU].*[^AEIOU]$
 select distinct city from station where city NOT REGEXP/RLIKE  '^[AEIOU]' and city NOT EXPREG/RLIKE '[AEIOU]$' order by city;
 
 
-13. Moving Average 
+#13. Moving Average 
 select a.order_date,a.sale. round( select sum(b.sale)/ count(b.sale) from sales as b where datediff(a.order_date,b.order_date) between 0 and 4) ,2) as '5daymoving average'
 from sales as a
 order by a.order_date
                                                 
-14. Cumulative Totals
+#14. Cumulative Totals
 select t.day, t.rental_count, @running_total:=@running_total+t.rental_total as cumulative_sum
 from
 (select date(rental_date) as day, count(rental_id) as rental_count from rental group by day) t
