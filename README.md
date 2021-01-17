@@ -28,7 +28,7 @@ My SQL Solutions - From couples of Resource
 ### SQL Command
 
 | **#** | **Title** | **Difficulty** |
-|---|---|---|---|
+|---|---|---|
 | 196 | [Delete Duplicate Emails](https://leetcode.com/problems/delete-duplicate-emails/) | Easy | 
 | 627 | [Swap Salary](https://leetcode.com/problems/swap-salary/) | Easy | 
 
@@ -38,7 +38,7 @@ My SQL Solutions - From couples of Resource
 - Simple Join
 
 | **#** | **Title** | **Difficulty** |
-|---|---|---|---|
+|---|---|---|
 | 175 | [Combine Two Tables](https://leetcode.com/problems/combine-two-tables/) | Easy | 
 | 181 | [Employees Earning More Than Their Managers](https://leetcode.com/problems/employees-earning-more-than-their-managers/) | Easy |
 | 183 | [Customers Who Never Order](https://leetcode.com/problems/customers-who-never-order/) | Easy | 
@@ -81,8 +81,8 @@ My SQL Solutions - From couples of Resource
 - Advanced Join 
 
 
-| **#** | **Title** | **Difficulty** | **Solution** | 
-|---|---|---|---|
+| **#** | **Title** | **Difficulty** |
+|---|---|---|
 | 180 | [Consecutive Numbers](https://leetcode.com/problems/consecutive-numbers/) | Medium |
 | 196 | [Delete Duplicate Emails](https://leetcode.com/problems/delete-duplicate-emails/) | Easy | 
 | 534 | [Game Play Analysis III](https://leetcode.com/problems/game-play-analysis-iii/) | Medium | 
@@ -110,8 +110,8 @@ My SQL Solutions - From couples of Resource
 
 - Simple Subquery
 
-| **#** | **Title** | **Difficulty** | **Solution** | 
-|---|---|---|---|
+| **#** | **Title** | **Difficulty** | 
+|---|---|---|
 | 176 | [Second Highest Salary](https://leetcode.com/problems/second-highest-salary/) | Easy | 
 | 183 | [Customers Who Never Order](https://leetcode.com/problems/customers-who-never-order/) | Easy |
 | 184 | [Department Highest Salary](https://leetcode.com/problems/department-highest-salary/) | Medium | 
@@ -164,8 +164,8 @@ My SQL Solutions - From couples of Resource
 
 -  Advanced Subquery
 
-| **#** | **Title** | **Difficulty** | **Solution** | 
-|---|---|---|---|
+| **#** | **Title** | **Difficulty** |
+|---|---|---|
 | 262 | [Trips and Users](https://leetcode.com/problems/trips-and-users/) | Hard |
 | 550 | [Game Play Analysis IV](https://leetcode.com/problems/game-play-analysis-iv/) | Medium | 
 | 569 | [Median Employee Salary](https://leetcode.com/problems/median-employee-salary/) | Hard | 
@@ -184,8 +184,8 @@ My SQL Solutions - From couples of Resource
 
 -  Recursive CTE
 
-| **#** | **Title** | **Difficulty** | **Solution** | 
-|---|---|---|---|
+| **#** | **Title** | **Difficulty** |
+|---|---|---|
 | 1270 | [All People Report to the Given Manager](https://leetcode.com/problems/all-people-report-to-the-given-manager/) | Medium | 
 | 1336 | [Number of Transactions per Visit](https://leetcode.com/problems/number-of-transactions-per-visit/) | Hard | 
 | 1384 | [Total Sales Amount by Year](https://leetcode.com/problems/total-sales-amount-by-year/) | Hard |
@@ -193,8 +193,8 @@ My SQL Solutions - From couples of Resource
 
 ### Window Function
 
-| **#** | **Title** | **Difficulty** | **Solution** | 
-|---|---|---|---|
+| **#** | **Title** | **Difficulty** | 
+|---|---|---|
 | 176 | [Second Highest Salary](https://leetcode.com/problems/second-highest-salary/) | Easy |
 | 177 | [Nth Highest Salary](https://leetcode.com/problems/nth-highest-salary/) | Medium | 
 | 178 | [Rank Scores](https://leetcode.com/problems/rank-scores/) | Medium |
@@ -236,8 +236,8 @@ My SQL Solutions - From couples of Resource
 
 ### CASE WHEN (or IIF)
 
-| **#** | **Title** | **Difficulty** | **Solution** | 
-|---|---|---|---|
+| **#** | **Title** | **Difficulty** |  
+|---|---|---|
 | 262 | [Trips and Users](https://leetcode.com/problems/trips-and-users/) | Hard |
 | 597 | [Friend Requests I: Overall Acceptance Rate](https://leetcode.com/problems/friend-requests-i-overall-acceptance-rate/) | Easy |
 | 608 | [Tree Node](https://leetcode.com/problems/tree-node/) | Medium |
@@ -264,8 +264,8 @@ My SQL Solutions - From couples of Resource
 
 ### OFFSET FETCH
 
-| **#** | **Title** | **Difficulty** | **Solution** | 
-|---|---|---|---|
+| **#** | **Title** | **Difficulty** |
+|---|---|---|
 | 176 | [Second Highest Salary](https://leetcode.com/problems/second-highest-salary/) | Easy | 
 | 177 | [Nth Highest Salary](https://leetcode.com/problems/nth-highest-salary/) | Medium |
 | 1321 | [Restaurant Growth](https://leetcode.com/problems/restaurant-growth/) | Medium | 
@@ -273,8 +273,8 @@ My SQL Solutions - From couples of Resource
 
 ### PIVOT & UNPIVOT
 
-| **#** | **Title** | **Difficulty** | **Solution** | 
-|---|---|---|---|
+| **#** | **Title** | **Difficulty** | 
+|---|---|---|
 | 602 | [Friend Requests II: Who Has the Most Friends](https://leetcode.com/problems/friend-requests-ii-who-has-the-most-friends/) | Medium | 
 | 618 | [Students Report By Geography](https://leetcode.com/problems/students-report-by-geography/) | Hard |
 | 1179 | [Reformat Department Table](https://leetcode.com/problems/reformat-department-table/) | Easy | 
@@ -282,8 +282,8 @@ My SQL Solutions - From couples of Resource
 
 ### Variable
 
-| **#** | **Title** | **Difficulty** | **Solution** | 
-|---|---|---|---|
+| **#** | **Title** | **Difficulty** |
+|---|---|---|
 | 597 | [Friend Requests I: Overall Acceptance Rate](https://leetcode.com/problems/friend-requests-i-overall-acceptance-rate/) | Easy |
 | 1098 | [Unpopular Books](https://leetcode.com/problems/unpopular-books/) | Medium | 
 | 1107 | [New Users Daily Count](https://leetcode.com/problems/new-users-daily-count/) | Medium | 
@@ -292,8 +292,8 @@ My SQL Solutions - From couples of Resource
 
 ## LeetCode SQL Questions by ID
 
- **#** | **Title** | **Difficulty** | **Solution** |
-|---|---|---|---|
+ **#** | **Title** | **Difficulty** | 
+|---|---|---|
 | 175 | [Combine Two Tables](https://leetcode.com/problems/combine-two-tables/) | Easy |
 | 176 | [Second Highest Salary](https://leetcode.com/problems/second-highest-salary/) | Easy | 
 | 177 | [Nth Highest Salary](https://leetcode.com/problems/nth-highest-salary/) | Medium |
@@ -381,7 +381,7 @@ My SQL Solutions - From couples of Resource
 | 1251 | [Average Selling Price](https://leetcode.com/problems/average-selling-price/) | Easy | 
 | 1264 | [Page Recommendations](https://leetcode.com/problems/page-recommendations/) | Medium | 
 | 1270 | [All People Report to the Given Manager](https://leetcode.com/problems/all-people-report-to-the-given-manager/) | Medium |
-| 1280 | [Students and Examinations](https://leetcode.com/problems/students-and-examinations/) | Easy | [
+| 1280 | [Students and Examinations](https://leetcode.com/problems/students-and-examinations/) | Easy | 
 | 1285 | [Find the Start and End Number of Continuous Ranges](https://leetcode.com/problems/find-the-start-and-end-number-of-continuous-ranges/) | Medium | 
 | 1294 | [Weather Type in Each Country](https://leetcode.com/problems/weather-type-in-each-country/) | Easy |
 | 1303 | [Find the Team Size](https://leetcode.com/problems/find-the-team-size/) | Easy | 
