@@ -29,7 +29,7 @@ order by user_id;
 select user_id, sum(transaction_amount) as total amount
 from
   (select * from query_four_march
-  union ll 
+  union all 
   select * from query_four_april) tmp
 group by user_id
 order by user_id;
