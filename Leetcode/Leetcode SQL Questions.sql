@@ -1,3 +1,5 @@
+Basic
+###########################################################################
 #182. Duplicate Emails
 select email from person group by email having count(*)>1;
 
@@ -5,18 +7,22 @@ select email from person group by email having count(*)>1;
 select player_id, min(event_date) as first_login
 from activity group by player_id;
 
+
+
 #578. Highest answer rate
 -- Note: answer rate = answer actions / total non-answer actions--
 select question_id from suervey_log
 group by survey_od 
 order by count(answer_id)/(count(*)-count(answer_id)) desc
 limit 1;
-                                           
+ 
+                                                                                    
 #584. Find Customer Referee
 select name from customer where referee!=2 or referww_id is Null;
 ########################
 select name from customer where isnull(referee_id,0)!=2;
-########################                                         
+######################## 
+                                         
 select name from customer where coalesce(referee_id,0)!=2;
 
 #586. Largest Number of orders
@@ -39,13 +45,15 @@ select max(num) as num from
 #620. Not boring Movie                                         
 select * from cinema where id%2=1 and description!='boring'
 order by rating desc;                                          
+
                                           
 #1050. Collaborate more than 3 times                                          
 SELECT actor_id, director_id
 FROM ActorDirector
 GROUP BY actor_id, director_id
 HAVING COUNT(*) >= 3;                                          
-                                          
+                                     
+                                        
 #1069. Products Sales                                          
 SELECT product_id, SUM(quantity) AS total_quantity
 FROM Sales
@@ -104,4 +112,26 @@ from views
 group by viewer_id, viewer_date
 having count(distinct article_id)>1
 order by id;                                          
+                                          
+SQL Command
+###########################################################################
+#196. Delete Duplicate emails                                          
+Delete p1
+from person p1 join person p2
+on p1.id>p2.id and p1.email=p2.email;                                          
+##########################
+delete from person
+where id not in  (select min(id) as id from person group by email);                                  
+                                                                                                                        
+#627. Swap Salary        
+update salary
+set sex= (case when sex='m' then 'f' else 'm' end);
+                                     
+                                          
+SQL Command
+###########################################################################                                          
+
+
+
+                                          
                                           
