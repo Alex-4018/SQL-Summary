@@ -315,13 +315,125 @@ from queue q1 join queue q2 on q1.turn>=q2.turn
 group by q1.person_id, q1.person_name
 having sum(q2.weight)<=1000
 order by sum(q2.weight) desc limit 1;                                          
-                                          
+                                                                              
+#1205. Monthly Transactions
+with tb1 as
+(select left(trans_date,7) as month , country, count(status) as approved_count, sum(amount) as approved_amount 
+ from transactions where status='approved'
+ group by left(trans_date,7), country)  ,
+tb2 as
+(select left(c.trans_date,7) as month, country, count(c.trans_id) as chargeback_count, sum(t.amount) as chargeback_amount
+ from chargebacks c join transactions t on c.trans_id=t.id 
+ group by left(trans_date,7), country)
+select tb1.month as month,
+       tb1.country as country,
+       isnull(tb1.approved_count,0) AS approved_count,
+       isnull(tb1.approved_amount,0) AS approved_amount,
+       isnull(tb2.chargeback_count,0) AS chargeback_count,
+       isnull(tb2.chargeback_amount,0) AS chargeback_amount
+from tb1 left join tb2 on tb1.month=tb2.month and tb1.country=tb2.country
+union all 
+select tb2.month as month,
+       ctb2.country as country,
+       isnull(tb1.approved_count,0) AS approved_count,
+       isnull(tb1.approved_amount,0) AS approved_amount,
+       isnull(tb2.chargeback_count,0) AS chargeback_count,
+       isnull(tb2.chargeback_amount,0) AS chargeback_amount
+from tb1 right join tb2 on tb1.month=tb2.month and tb1.country=tb2.country
+where tb1.month is Null;   
+
+#1241. Number of comments per post
+select s1.sub_id as post_id, count(distinct s2.sub_id) as number_of_comments
+from submission s1
+left join submission s2
+on s1.sub_id=s2.parent_id
+where s1.parent_id is null
+group by s1.sub_id;                                     
+                                    
+#1270. All people report to the given manager
+With RECURSIVE tmp as
+(select employee_id from employees where manager_id=1 and employee_id=manager_id
+ union
+ select e.employee_id from employees e join tmp on tmp.employee_id=e.manager_id)
+select employee_id
+FROM tmp
+OPTION (MAXRECURSION 3);                                          
+
+#1280. Students and Examinations
+select s.student_id, s.student_name, b.subject_name, count(e.student_id) as attended_exams
+from students s cross join subjects b left join examinations e on s.student_id=e.student_id and b.subject_name=e.subject_name
+group by  s.student_id, s.student_name, b.subject_name
+order by s.student_id, b.subject_name;                                
+
+#1294. Weather type in each country
+select c.country_name, w.weather_type
+from (select country_id, case when avg(weather_state*1.0)<=15 then 'Cold'
+                              when avg(weather_state*1.0)>=25  then 'Hot'
+                              else 'Warm' end as weather_type 
+      from weather where left(day,7)='2019-11' group by country_id ) w
+join countries on c.country_id=w.country_id;
+
+#1303. Find the team size
+select e1.employee_id, count(*) as team_size
+from employee e1 join employee e2 on e1.team_id=e2.team_id
+group by e1.employee_id;
+
+#1327. List the Products ordered in a period
+select min(p.product_name) as product_name, sum(unit) as unit
+from orders o join products p on o.product_id=p.product_id
+where year(o.order_date)=2020 and month(o.order_date)=2
+group by p.product_id
+having sum(unit)>=100;
+                                    
+#1336. Number of Transactions per visit
+with tb1 as 
+(select v.user_id, v.visit_date, count(t.transactin_date) as c
+ from visits v left join transactions t on v.visit_date=t.transaction_date and v.user_id=t.user_id
+ group by v.user_id, v.visit_date) ,
+RECURSIVE cte as 
+(select max(c) as c from tb1
+ union all
+ select c-1 from cte
+ where c>0)                                   
+select cte.c as transaction_count, count(tb1.user_id) AS visits_count
+from cte left join tb1 
+on cte.c=tb1.c
+group by cte.c
+order by cte.c;
+                                    
+#1350. Student with Invalid department
+select s.id, s.name
+from student.s left join department d on s.department_id=d.id
+where d.id is Null;
+
+#1364. Number of Trusted Contacts of a customer
+With tb1 as
+(select c.customer_id, c.customer_name, count(con.contact_name) as contacts_cnt, count(c2.customer_id) as trusted_contacts_cnt)
+ from customers c left join contacts con on c.customer_id=con.user_id
+                  left join customers c2 on con.contact_email=c2.email
+ group by c.customer_id, c.customer_name)
+select i.invoice_id, tb1.customer_name,i.price, tb1.contacts_cnt, tb1.trusted_contacts_cnt
+from invoices i join tb1 
+on i.user_id=tb1.customer_id
+order by i.invoice_id;
                                           
                                           
 
-                                         
-
-
-
-                                          
-                                          
+                                    
+                                    
+                                    
+                                    
+                                    
+                                    
+                                    
+                                    
+                                    
+                                    
+                                    
+                                    
+                                    
+                                    
+                                    
+                                    
+                                    
+                                    
