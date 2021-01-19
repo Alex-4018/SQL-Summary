@@ -282,17 +282,39 @@ with tb1 as
 select cast(avg(daily_p) as decimal(5.2)) as average_daily_percent
 from tb1;                        
                         
-                        
+#1158. Market Analysis
+select u.user_id as buyer_id, u.join_date as join_date,
+       sum(case when year(order_date)=2019 then 1 else 0 end) as orders_2019
+from users u left join orders o on u.user_id=o.user_id 
+group by u.user_id, u.join_date;                        
+############################                                          
+with tb1 as
+(select buyer_id, cout(*) as num from orders where year(order_date)=2019 group by buyer_id )                                          
+select u.user_id as buyer_id, u.join_date , isnull(num,0) as orders_2019
+from users u left join tb1 o on u.user_id=o.user_id;                                          
                                           
+#1164. Product Price at a given date
+with tb1 as
+(select product_id, new_price from 
+                                 (select product_id, new_price, row_number() over(partition by product_id order by change_date desc) as r
+                                  from products where change_date<='2019-08-16') rank
+  where r=1)                                   
+select p.product_id, isnull(new_price,10) as price
+from (select distinct product_id from products) p left join tb1 on p.product_id=tb1.product_id;
+################################                                          
+with tb1 as
+(select product_id, max(change_date) as date from products where change_date<='2019-08-16' group by product_id),
+tb2 as
+(select p.product_id, p.new_price from products p join tb1 on p.prodcut_id=tb1.product_id and p.change_date=tb1.date)                                          
+select p.product_id , isnull(new_price,10) as price 
+from (select distinct product_id from products) p left join tb2 on p.product_id=tb2.product_id;                                         
                                           
-                                          
-                                          
-                                          
-                                          
-                                          
-                                          
-                                          
-                                          
+#1204. Last person to fit the elevator
+select q1.person_name
+from queue q1 join queue q2 on q1.turn>=q2.turn 
+group by q1.person_id, q1.person_name
+having sum(q2.weight)<=1000
+order by sum(q2.weight) desc limit 1;                                          
                                           
                                           
                                           
