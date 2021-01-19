@@ -417,8 +417,27 @@ from invoices i join tb1
 on i.user_id=tb1.customer_id
 order by i.invoice_id;
                                           
-                                          
+#1378. Replace employee id with the unique identifier
+select u.unique_id, e.name
+from employee e left join employeeUNI u
+on e.id=u.id;
 
+#1384. Total Sales Amount by Year
+With RECURSIVE cte as
+(select min(period_start) as date, max(period_end) as end_date
+ from sales
+ union all
+ select date_add(date, interval 1 day), end_date
+ from cte
+ where date< end_date --limit 100--)                                          
+select s.product_id as product_id, p.product_name as product_name,
+       cast(year(cte.date) as char(4)) as report_year,
+        sum(average_daily_sales) as  total_amount
+from cte join sales s on cte.date between s.period_start and s.period_end
+         join products p on s,product_id=p.producct_id
+group by s.product_id, p.product_name, Year(cte.date)
+order by  product_id, report_year
+  
                                     
                                     
                                     
