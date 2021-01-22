@@ -144,6 +144,9 @@ where e1.salary>e2.salary;
 #183. Customer Never order
 select c.name as Customer
 from customers c left join orders o on c.id=o.id where o.id is NULL;
+##########################################
+select name as customer from customers where id not in (select customerid from orders);
+
                                           
 #184. Employee in each Department with highest salary
 With max_salary as
@@ -151,7 +154,14 @@ With max_salary as
 select d.name department, e.name employee, e.salary 
 from max_salary ms join employee e on ms.department_id=e.department_id and ms.salary=e.salary
 join department d on e.department_id=d.id;   
-                                          
+###############################################
+select department, employee, salary
+from (select d.name department, e.name employee, salary, dense_rank() over(partition by departmentid order by salary desc) r
+       from employee e join department d on e.departmentid=d.id) tb1
+where r=1;
+
+					  
+
 #197. Rising Temperature
 select w2.id from weather w1 join weather w2 on datediff(day,w2.recorddate,w1.recorddate)=1
 where w1.temperature<w2.temperature;                                        
@@ -165,7 +175,14 @@ group by t.request_at;
 #512. The earlist Game Play                                          
 select a.playrt_id, device_id from activity a 
 join (select player_id, min(event_date min_date from activity group by player_id) tmp
-on a.player_id=tmp.player_id and a.event_date=tmp.min_date;                                           
+on a.player_id=tmp.player_id and a.event_date=tmp.min_date;
+##############################
+select player_id, device_id from avtivity where concat(player_id, event_date) in 
+ 	 	(select concat(player_id, min(event_date) from activity group by player_id );
+##############################
+select player_id, device_id from (select player_id, device_id, dense_rank() over(partition by player_id order by event_date) as r 
+                                  from activity) tb1
+where r=1;                                      
                                           
 #550. Users who played in the second day.                                          
 select cast(count(distinct a2.player_id)*1.0/count(distinct a1.player_id) as decimal(3,2))  as fraction                                        
@@ -200,7 +217,14 @@ where sales_id not in
 select f1.follower, count(distinct f2.follower) as num
 from follow f1 join follow f2 on f1.follower=f2.followee
 group by f1.follower
-order by f1.follower;                                          
+order by f1.follower;
+###############################
+select followee as follower, count(distinct follower) as num
+from follow 
+group by followee
+having followee in (select follower from follow)
+order by followee;
+
                                           
 #615. Average salary department vs company
 with tb1 as
@@ -238,6 +262,14 @@ with tb1 as
  from sales group by product_id)
 select s.product_id, first_year, quantity, price
 from sales s join tb1 on s.prodcut_id=tb1.product_id and s.year=tb1.fisrst_year;
+########################################
+select product_id, year as first_year, quantity,price
+from (select *, dense_rank() over (partition by product_id order by year) as r frm sales) tb1
+where r=1;
+########################################
+select product_id, year as first_year, quantity, price
+from sales s 
+where year= (select year from sales where product_id=s.product_id order by year limit 1);
 
 #1075. Project employee
 select p.project_id, cast( avg(e.experience_year*1.0) as decimal (10,2)) as avg_years
@@ -261,9 +293,10 @@ where r=1;
                                                                   
 #1083. Sales Analysis
 With tb1 as
-(select s.buy_id, p.product_name from sales join product p on s.product_id=p.product_id)
+(select s.buy_id, p.product_name from sales s join product p on s.product_id=p.product_id)
 select buyer_id from tb1 where product_name='S8' and buyer_id not in (select buyer_id from tb1 where product_name='iPhone');
-                                                
+			  
+
 #1112. Highest Grade for each student
 with tb1 as 
 (select student_id , max(grade) as grade    
@@ -271,7 +304,14 @@ with tb1 as
 select e.student_id, min(course_id), e.grade from enrollments e join tb1 
 on e.student_id=tb1.student_id and e.grade=tb1.grade
 group by e.student_id, e.grade
-order by e.student_id, e.grade;                                                               
+order by e.student_id;                                                               
+##############################
+with tb1 as 
+(select *, row_number() over (partition by student_id order by grade desc, course_id) as r from enrollments)
+select student_id, course_id, grade
+from tb1 where r=1 order by student_id;
+
+
 
 #1132. Reported Posts
 with tb1 as  
@@ -315,7 +355,10 @@ from queue q1 join queue q2 on q1.turn>=q2.turn
 group by q1.person_id, q1.person_name
 having sum(q2.weight)<=1000
 order by sum(q2.weight) desc limit 1;                                          
-                                                                              
+################################
+select person_naem from (select person_name, turn, sum(weight) over (order by turn) as tw from Queue) tb1
+where tw<=1000 order by turn desc limit 1;
+				    
 #1205. Monthly Transactions
 with tb1 as
 (select left(trans_date,7) as month , country, count(status) as approved_count, sum(amount) as approved_amount 
@@ -447,15 +490,13 @@ from logs l1
 join logs l2 on l1.id=l2.id-1 and l1.num=l2.num
 join logs l3 on l1.id=l3.id-2 and l1.num=l3.num;
 
-#196. Delete Duplicats emails
-delete p1 from person p1 join person p2 on p1.email=p2.email and p1.id>p2.id;
 
 #534. Game Play Analysis 3
 select a1.player_id, a1.event_date, sum(a2.games_played) as games_played_sofar
 from activity a1 join activity a2 on a1.player_id=a2.player_id and a1.event_date>=a2.event_date
 group by a1.player_id, a1.event_date;
                                    
-# Median Employee Salary
+#569. Median Employee Salary
 with tb1 as 
 (select e1.id, e1.employee,e1.salary, count(*) as r, (select count(*) from employee where company=e1.company) as num)
 from employee e1, join employee e2 on e1.company=e2.company and (e1.salary >e2.salary or (e1.salary = e2.salary AND e1.id >= e2.id))
@@ -469,6 +510,11 @@ from employee e1 join employee e2 on e1.id=e2.id and e1.month>=e2.month and e1.m
 where e1.month != (select max(month) from employee where id=e1.id)
 group by e1.id, e1.month
 order by e1.id, e1.month desc;
+##########################################
+select e.id, month, sum(salary) over(partition by id order by month rows between 2 preceding  and current row) as salary
+from employee e where month!= (select max(month) from employee where id=e.id)
+order by id, month desc;
+
 
 #601. Traffic of Stadium
 WITH tb1 AS 
@@ -486,6 +532,19 @@ select c2.seat_id
 from cinema c1 right join cinema c2 on c1.seat_id+1=c2.seat_id
 left join cinema c3 on c2.seat_id+1=c3.seat_id 
 where c2.free=1 and (c1.free = 1 OR c3.free = 1);
+###################################
+with tb1 as
+(select seat_id, row_number() over(order by seat_id) as r from cinema where free=1).
+tb2 as 
+(select seat_id,count(*) over(partition by (seat_id-r)) as num from tb1)
+select seat_id from tb2 where num>=2;
+##################################
+with tb1 as 
+(select seat_id, free as free1, lead(free,1) over (order by seat_id) as free2, 
+  lag(free,1) over (order by seat_id) as free0 from cinema)
+select seat_id from tb1 where free1=1 and (free2=1 or free0=1);
+
+
 
 #612. Shortest Distance
 select cast(min(squt(power(p1.x-p2.x,2)+power(p1.y-p2.y,2))) as decimal(10,2)) as shortest
@@ -496,6 +555,12 @@ join point_2d p2 on p1.x!=p2.x or p1.y!=p2.y; ---OR here very important---
 select min (abs(p1.x-p2.x))as shortest
 from point p1
 join point p2 on p1.x!=p2.x;
+#########################
+select min(next-x) AS shortest
+from (
+    select x, lead(x) OVER (order by x) AS next
+    from point
+) tb1;		
 
 #1097. Game play analysis
 select a1.event_date as install_dt, count(distinct a1.player_id) as installs, 
@@ -664,8 +729,87 @@ select tb1,username, tb1.activity, tb1.startdate, tb1.enddate
 from tb1 join tb2 on tb1.username=tb2.username 
 where tb1.r=tb2.c or tb2.c=1;                                   
 
+
+Subquery
+######################################################################################################
+#176. Second largest salary
+select max(salary) as secondhighestsalary
+from employy
+where salary < (select max(salary) from employee);
+								    
+#571. Median given frequency of numbers
+with tb1 as 
+(select * ,sum(frequency) over (order by number) as cum_num, sum(frequency) over () as num from numbers)
+select avg(number*1.0) as median from tb1 where num/2.0 between cum_num-frequency and cum_num;                                                                   
                                                                      
+#602. Who has the most friends
+with tb1 as 
+(select requester_id as id from request_accepted union all select accepter_id from request_accepted) 
+select id, count(*) as num from tb1 group by id order by count(*) desc limit 1;                                                                    
                                                                      
-                                                                     
-                                                                     
-                                                                     
+#608. Tree Node
+select id, case when p_id is null then 'Root'
+                when p_id is not null and id in (select distinct p_id from tree) then 'Inner'
+                else 'Leaf' end as Type
+from tree;
+								     
+#618. Students report by geography
+with tb1 as
+(select  row_number() over (partition by continent order by name) as r , 
+           if(continent = 'America', name, NULL) AS America,
+           if(continent = 'Asia', name, NULL) AS Asia,
+           if(continent = 'Europe', name, NULL) AS Europe
+ from student)
+select MIN(America) AS America, MIN(Asia) AS Asia, MIN(Europe) AS Europe
+from tb1
+group by r;
+##############################################								     
+select  America, Asia, Europe
+from
+  (select row_number() over (partition by continent order by name) AS r, name AS Asia
+   from student where continent = 'Asia') AS t1
+  right join 
+  (select row_number() over (partition by continent order by name) AS r, name AS America
+   from student where continent = 'America') AS t2 ON t1.r = t2.r
+  left join
+  (select row_number() over (partition by continent order by name) AS r, name AS Europe
+   from student where continent = 'Europe') AS t2 ON t2.r = t3.r;							     
+#############################################
+select America, Asia, Europe
+from (select @as:=0, @am:=0, @eu:=0) t,
+     (select @as:=@as + 1 AS asid, name AS Asia from student where continent = 'Asia' order by Asia) AS t1
+    right join (select @am:=@am + 1 AS amid, name AS America from student where continent ='America'  order by America) AS t2 on t1.asid = t2.amid
+    left join (select @eu:=@eu + 1 AS euid, name AS Europe from student where continent ='Europe'  order by Europe) AS t3 on t2.amid = t3.euid;
+
+#626. Exchange Seats
+select case when id%2=1 and id=(select max(id) from seat) then id
+            when id%2=1 then id+1
+            else id-1 end as id, student
+from seat order by id;
+
+#1045. Customers who bought all products
+select customer_id from customer group by customer_id
+haveing count(distinct product_key)= (select count(*) from product);
+ 
+#1084. Sales Analysis 3
+select product_id, product_name from product 
+where product_id in (select product_id from sales where sale_date between '2019-01-01' and '2019-03-31' ) 
+      and product_id not  in (select product_id from sales where not sale_date between '2019-01-01' and '2019-03-31' ); 								     
+								     
+#1098. Unpopular Books
+select book_id, name from books where available_from <='2019-05-23'
+ and bood_id not in (select book_id from orders where dispatch_date>='2018-06-24' group by book_id having sum(quantity)>=10);
+####################################
+decalre @d int;
+set @d='2019-06-23';
+select book_id, name from books where available_from <=date_sub(@d, interval 1 month)
+ and bood_id not in (select book_id from orders where dispatch_date>=date_add(@d, interval 1 year) group by book_id having sum(quantity)>=10);
+
+								     
+#1107								     
+
+
+								     
+								     
+								     
+								     
