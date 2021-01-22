@@ -406,7 +406,11 @@ OPTION (MAXRECURSION 3);
 select s.student_id, s.student_name, b.subject_name, count(e.student_id) as attended_exams
 from students s cross join subjects b left join examinations e on s.student_id=e.student_id and b.subject_name=e.subject_name
 group by  s.student_id, s.student_name, b.subject_name
-order by s.student_id, b.subject_name;                                
+order by s.student_id, b.subject_name;
+####################################
+select s.student_id, s.student_name, b.subject_name, (select count(*) from examinations where student_id=s.student_id and subject_name=b.subject_name )  as attended_exams
+from students s, subjets b
+order by  s.student_id, b.subject_name;                            
 
 #1294. Weather type in each country
 select c.country_name, w.weather_type
@@ -448,6 +452,11 @@ order by cte.c;
 select s.id, s.name
 from student.s left join department d on s.department_id=d.id
 where d.id is Null;
+#############################################
+select id, name
+from Students
+where department_id not in (select id from Departments);
+
 
 #1364. Number of Trusted Contacts of a customer
 With tb1 as
@@ -657,12 +666,28 @@ with tb1 as
  from succeeded s1 join succeeded s2 on s1.success_date>=22.success_date
  group by s1.succeeded_date),
 tb2 as 
-(select *, year(date) as r2 from tb1 where year(date)=2019)
+(select *, DAYOFYEAR(date) as r2 from tb1 where year(date)=2019)
 select s as period_state, min(date) as start_date, max(date) as end_date
 from tb2
 group by r2-r,s
 order by start_date;
-                                                                      
+############################################# 
+with tb1 as
+(select fail_date as date, 'failed' as s
+ from failed 
+ union 
+ select succeeded_date as date, 'succeeded' as s
+ from succeeded),
+tb2 as 
+(select *, row_number() over (partition by s order by date) as r,
+           row_number() over (order by date) as r2 from tb1 where year(date)=2019)
+select s as period_state, min(date) as start_date, max(date) as end_date 
+from tb2
+group by r2-r,s
+order by start_date;
+								      
+								      
+                                                                     
 #1251. Average selling price
 select u.product_id, case(sum(price*units)*1.0/sum(units) as decimal(10,2)) as average_price
 from unitssold u join price p on u.product_id=p.product_id and u.purchase_date>=p.start_date and u.purchase_date<=p.end_date                                                                    
@@ -675,7 +700,13 @@ with tb1 as
  group by  l1.log_id)  
 select min(log_id) as start_id, max(log_id) as end_id
 from tb1
-group by log_id-r;                                                                    
+group by log_id-r;        
+###################################
+with tb1 as 
+(select log_id, row_number() over (order by log_id) as r from logs)  
+select min(log_id) as start_id, max(log_id) as end_id
+from tb1
+group by log_id-r;                                                               
 ###################################                                                                      
 select min(log_id) as start_id, max(log_id) as end_id
 from(
@@ -728,6 +759,11 @@ tb2 as
 select tb1,username, tb1.activity, tb1.startdate, tb1.enddate
 from tb1 join tb2 on tb1.username=tb2.username 
 where tb1.r=tb2.c or tb2.c=1;                                   
+####################################
+select username, activity, satrtdate, enddate
+from (select *, row_number over(partition by username order by enddate desc as r, count(*) over (partition by username) as c from useractivity) tb1
+where r=2 or c=1;
+
 
 
 Subquery
@@ -806,9 +842,107 @@ select book_id, name from books where available_from <=date_sub(@d, interval 1 m
  and bood_id not in (select book_id from orders where dispatch_date>=date_add(@d, interval 1 year) group by book_id having sum(quantity)>=10);
 
 								     
-#1107								     
+#1107. New Users Daily Count
+declare @d date;
+set @d=date_sub('2019-06-30', interval 90 day);
+with tb1 as
+(select user_id, min(actitvity_date) as Login_date from traffic where activity='login' group by user_id)
+select login_date, count(*) as user_count
+from tb1 group by login_date
+having login_date>=@d;
+#####################################								     
+declare @d date;
+set @d=date_sub('2019-06-30', interval 90 day);
+with tb1 as
+(select *, row_number() over (partition by user_id order by activity_date) as r from traffic where activity='login')
+select activity_date as login_date, count(*) as user_count
+from tb1 
+where r=1
+group by login_date
+having login_date>=@d;
 
+#1142. User Activity for the past 30 days								     
+with tb1 as
+(select count(distinct session_id) as num from activity 
+where activity_date betweeen data_sub('2019-07-27', interval 29 day) and '2019-07-27'
+group by user_id)
+select cast(isnull(avg(num*1.0),0) as decimal(10,2)) as average_sessions_per_user
+from tb1;								     
 
+#1174. Immediate food delivery
+with tb1 as 
+(select min(order_date) as fod, min(customer_pred_delivery_date) as fdd from delivery group by customer_id)
+select cast( avg(case when fod=fdd then 100.0 else 0 end) as decimal(10,2)) asimmediate_percentage from tb1;
+################################								     
+with tb1 as 
+(select order_date, customer_pred_delivery_date, row_number() over (partition by customer_id order by order by order_date) as r from delivery)
+select cast( avg(case when order_date=customer_pred_delivery_date then 100.0 else 0 end) as decimal(10,2)) asimmediate_percentage from tb1
+where r=1;								     
+								     
+#1264. Page Recommendations
+with r as 
+(select case when user1_id=1 then user2_id else user1_id end as fid from friendship where user1_id=1 or user2_id=1)
+select distinct page_id as recommended_page from likes
+where user_id in (select * from f) and page_id not in (select page_id from likes where user_id=1);
+
+#1322. Ads Performance
+select ad_id, round(if(clicks + views = 0, 0, clicks / (clicks + views) * 100), 2) as ctr
+from (select ad_id, sum(if(action='Clicked', 1, 0)) as clicks, sum(if(action='Viewed', 1, 0)) as views
+      from Ads group by ad_id) as a
+order by ctr desc, ad_id asc;	
+							     
+#1341. Movie Rating
+select min(name) AS results from Users where user_id in ( select user_id from (
+                               (select user_id, dense_rank() over(order by count(*) desc) as r1 from Movie_Rating group by user_id having r1=1) tb1))
+union ALL 
+select min(title) AS results from Movies
+where movie_id in ( select movie_id from (
+                  select movie_id, avg(rating*1.0) over(order by count(*) desc) as r2 from Movie_Rating where year(created_at) = 2020 and month(created_at) = 2
+    	           group by user_id having r2=1) tb2));
+##############################
+select user_name AS results from
+(select a.name AS user_name, count(*) AS counts from Movie_Rating AS b
+    join Users AS a on a.user_id = b.user_id group by b.user_id order by counts desc, user_name asc limit 1 ) first_query
+union all
+select movie_name AS results from
+(select c.title AS movie_name, avg(d.rating) AS rate from Movie_Rating AS d
+    join Movies AS c on c.movie_id = d.movie_id where substr(d.created_at, 1, 7) = '2020-02'
+    group by d.movie_id order by rate desc, movie_name asc limit 1 ) second_query;								   								   
+###############################								   
+select min(name) AS results from Users where user_id in (
+    select user_id from Movie_Rating group by  user_id  order by count(distinct movie_id) desc limit 1)
+union ALL 
+select min(title) AS results from Movies
+where movie_id in ( select movie_id from Movie_Rating where year(created_at) = 2020 and month(created_at) = 2
+    	            group by movie_id order by avg(rating*1.0) desc limit 1);
+            							     
+#1355. Activity Participants
+select activity from (select activity, rank() over(order by count(*)) as r1,rank() over(order by count(*) desc ) as r2
+                      from friends group by activity) tb1
+where r1 != 1 and r2 != 1;								     
+##############################
+with tb1 as
+(select activity, count(*) as num from friends group by activity)		
+select activity from tb1 where num not in (select max(num) from tb1 union all select min(num) from tb1);						     
+								     
+								     
+								     
+								     
+								     
+								     
+								     
+								     
+								     
+								     
+								     
+								     
+								     
+								     
+								     
+								     
+								     
+								     
+								     
 								     
 								     
 								     
