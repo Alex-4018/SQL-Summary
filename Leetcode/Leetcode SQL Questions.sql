@@ -128,7 +128,7 @@ update salary
 set sex= (case when sex='m' then 'f' else 'm' end);
                                      
                                           
-SQL Command
+Simple Join
 ###########################################################################                                          
 #175. Combine two tables
 select p.firstname,p.lastname,a.city,a.state
@@ -437,22 +437,235 @@ from cte join sales s on cte.date between s.period_start and s.period_end
          join products p on s,product_id=p.producct_id
 group by s.product_id, p.product_name, Year(cte.date)
 order by  product_id, report_year
-  
+
+
+Advanced Join
+#################################################################                                     
+#180. Consecutive Number
+select distinct l1.num as consecutiveNums
+from logs l1
+join logs l2 on l1.id=l2.id-1 and l1.num=l2.num
+join logs l3 on l1.id=l3.id-2 and l1.num=l3.num;
+
+#196. Delete Duplicats emails
+delete p1 from person p1 join person p2 on p1.email=p2.email and p1.id>p2.id;
+
+#534. Game Play Analysis 3
+select a1.player_id, a1.event_date, sum(a2.games_played) as games_played_sofar
+from activity a1 join activity a2 on a1.player_id=a2.player_id and a1.event_date>=a2.event_date
+group by a1.player_id, a1.event_date;
+                                   
+# Median Employee Salary
+with tb1 as 
+(select e1.id, e1.employee,e1.salary, count(*) as r, (select count(*) from employee where company=e1.company) as num)
+from employee e1, join employee e2 on e1.company=e2.company and (e1.salary >e2.salary or (e1.salary = e2.salary AND e1.id >= e2.id))
+order by e1.id, e1.employee,e1.salary)
+select id, company, salary
+from tb1 where r between num*1.0/2 and num*1.0/2+1;
+
+#579. Cumulative Salary
+select e1.id, e1.month , sum (e2.salary) as salary
+from employee e1 join employee e2 on e1.id=e2.id and e1.month>=e2.month and e1.month<=e2.month +2
+where e1.month != (select max(month) from employee where id=e1.id)
+group by e1.id, e1.month
+order by e1.id, e1.month desc;
+
+#601. Traffic of Stadium
+WITH tb1 AS 
+( select s1.id as id1, s2.id as id2, s3.id as id3 from stadium s1, stadium s2, stadium s3
+    WHERE s1.id + 1 = s2.id and s2.id + 1 = s3.id and s1.people >= 100 and s2.people >= 100 and s3.people >= 100)
+select * from stadium
+where id in (select id1 id from tb1
+             union 
+             select id2 from tb1
+             union 
+             select id3 from tb1);
+                                   
+#603. Consecutive Availiable Seats
+select c2.seat_id
+from cinema c1 right join cinema c2 on c1.seat_id+1=c2.seat_id
+left join cinema c3 on c2.seat_id+1=c3.seat_id 
+where c2.free=1 and (c1.free = 1 OR c3.free = 1);
+
+#612. Shortest Distance
+select cast(min(squt(power(p1.x-p2.x,2)+power(p1.y-p2.y,2))) as decimal(10,2)) as shortest
+from point_2d p1
+join point_2d p2 on p1.x!=p2.x or p1.y!=p2.y; ---OR here very important---
+
+#613. Shortest Distance
+select min (abs(p1.x-p2.x))as shortest
+from point p1
+join point p2 on p1.x!=p2.x;
+
+#1097. Game play analysis
+select a1.event_date as install_dt, count(distinct a1.player_id) as installs, 
+       cast( count(desitinct a2.player_id)*1.0/count(distinct a1.player_id) as decimal(3,2)) as day1_retention
+from (select player_id, min(event_date) as event_date from activity group by player_id) a1
+      left joion activity a2 on a1.player_id=a2.player_id and datediff(a2.event_date,a1.event_date)=1
+group by a1.event_date;
+
+#1126. Acive Businesses
+with tb1 as
+(select *, avg(occurences*1.0) over (partition by event_type) as avg_oc from events)
+select business_id from tb1 group by business_id having sum(case when occurences>avg_oc then 1 else 0 end)>1;                                 
+##########################################
+with tb1 as
+(select event_type , avg(occurences*1.0) as avg_oc from events group by event_type)
+select business_id from event e join tb1 on e.event_type=tb1.event_tpye and e.occurences > tb1.avg_oc 
+group by business_id 
+having count(*)>1;                                       
                                     
+#1127. User Purchase Platform
+With tb1 as
+(select user_id, spend_date,amount, case when count(*) over (partition by user_id, spend_date)=1 then platform else 'both' end as platform
+ from spending),
+tb2 as
+(select spend_date, platform, sum(amount) as total_amount, count(distinct user_id) as total_users
+ from tb1 group by spend_date, platform),
+d as
+(select distinct spend_date from tb2),
+p as 
+(select 'desktop' as platform union select 'mobile' union select 'both')
+select d.spend_date, p.platform, isnull(total_amount,0) as total_amount, isnull(total_users,0) as total_users
+from d join p
+left join tb2 on d.spend_date=tb2.spend_date and p.platform=tb2.platform;                                    
                                     
+#1159. Market Analysis
+with tb1 as
+(select seller_id, item_id from 
+        (select seller_id, item_id, row_number() over (partition by seller_id order by order_date) as r from order) rank 
+ where r=2)
+select u.user_id as seller_id, case when u.favorite_brand=i.item_brand then 'yes' else 'no' end as '2nd_item_favbrand'
+from users u left join tb1 on u.user_id=tb1.seller_id left join items i on i.item_id=tb1.item_id;
+##############################################################
+with tb1 as
+(select o1.seller_id,o1.item_id from orders o1 join orders o2 on o1.seller_od=o2.seller_id and o1.order_date>=o2.order_date
+ group by o1.seller_id,o1.order_date,o1.item_id
+ having count(*)=2)
+select u.user_id as seller_id, case when u.favorite_brand=i.item_brand then 'yes' else 'no' end as '2nd_item_favbrand' 
+from users u left join tb1 on u.user_id=tb1.seller_id left join items i on i.item_id=tb1.item_id;
+
+#1194. Tournament_winners
+with tb1 as
+(select first_player as player, first_score as score from matches union select second_player, second_score from matches),
+tb2 as
+(select p.player_id, p.group_id, sum(tb1.score) as tp
+from players p left join tb1 on p.player_id=tb1.player
+group by p.player_id, p.group_id)                                                                                       
+select group_id,player_id from
+         (select player_id, group_id , row_number() over(partition by group_id order by tp desc, player_id) as r from tb2) tb3
+where  r=1;
+####################################                                                                                       
+with tb1 as 
+(select player_id, group_id, sum(case when player_id=first_player then first_score else second_score end) as tp
+from players p left join matches m on p.player_id=m.first_player or p.player_id=m.second_player
+group by player_id, group_id)
+select group_id,player_id from
+         (select player_id, group_id , row_number() over(partition by group_id order by tp desc, player_id) as r from tb1) tb2
+where  r=1;                                 
+####################################                                        
+with tb1 as 
+(select player_id, group_id, sum(case when player_id=first_player then first_score else second_score end) as tp
+from players p left join matches m on p.player_id=m.first_player or p.player_id=m.second_player
+group by player_id, group_id)                                
+select l.group_id, l.player_id
+from tb1 l join tb1 r on l.group_id = r.group_id and (l.tp < r.tp or (l.tp = r.tp and l.player_id >= r.player_id))
+group by l.group_id, l.player_id
+having count(*) = 1;                                    
                                     
+#1212. Team Score in football tournation
+select team_id, team_name, sum( case when team_id=host_id and host_goals>guest_goals then 3
+                                     when team_id=guset_id and guest_goals>host_goals then 3
+                                     when host_goals=guest_goals then 1
+                                     else 0 end ) as num_points
+from teams t left join matches m on t.team_id=m.host_team or t.team_id=m.guest_team 
+group by team_id, team_name 
+order by num_points desc, team_id; 
+
+#1225 Report Contiguous Date
+with tb1 as
+(select f1.fail_date as date, 'failed' as s, count(*) as r
+ from failed f1 join failed f2 on f1.fail_date>=f2.fail_date
+ group by f1.fail_date
+ union 
+ select s1.succeeded_date as date, 'succeeded' as s, count(*) as r
+ from succeeded s1 join succeeded s2 on s1.success_date>=22.success_date
+ group by s1.succeeded_date),
+tb2 as 
+(select *, year(date) as r2 from tb1 where year(date)=2019)
+select s as period_state, min(date) as start_date, max(date) as end_date
+from tb2
+group by r2-r,s
+order by start_date;
+                                                                      
+#1251. Average selling price
+select u.product_id, case(sum(price*units)*1.0/sum(units) as decimal(10,2)) as average_price
+from unitssold u join price p on u.product_id=p.product_id and u.purchase_date>=p.start_date and u.purchase_date<=p.end_date                                                                    
+group by  u.product_id;                                                                     
+                                                                      
+#1285. Find the start and end number of continuous ranges
+with tb1 as 
+(select l1.log_id, count(*) as r 
+  from logs l1 join logs l2 on l1.log_id>=l2.log_id
+ group by  l1.log_id)  
+select min(log_id) as start_id, max(log_id) as end_id
+from tb1
+group by log_id-r;                                                                    
+###################################                                                                      
+select min(log_id) as start_id, max(log_id) as end_id
+from(
+	select *, (@id:=@id+1) as id
+	from logs, (select @id:= 0) as init
+) tmp
+group by log_id - id                                                                      
+###################################
+select l1.log_id as start_id, l2.log_id as end_id
+from
+  (
+    select log_id
+    from Logs
+    where log_id - 1 not in (select * from Logs)
+  ) as l1,
+  (
+    select log_id
+    from Logs
+    where log_id + 1 not in (select * from Logs)
+  ) as l2
+where l1.log_id <= l2.log_id
+group by l1.log_id;
+                                
+#1308. Runing total for different genders
+select s1.gender,s1.day,sum(s2.score_points) as total
+from scores s1
+join scores s2
+on s1.gender=s2.gender and s1.day>=s2.day
+group by s1.gender,s1.day
+order by s1.gender,s1.day;                                     
                                     
+#1321. Restaurant Growth
+with total as
+(select visited_on, sum(amount) as amount
+from customer
+group by visited_on)
+select t1.visited_on, sum(t2.amount) as amount, cast(avg(t2.amount*1.0) as decimal(10,2) as average_amount)
+from total t1 join total t2 on t1.visited_on>=t2,visited_on and t1.visited_on<= date_add(t2.visited_on, interval 6 day)
+group by t1.visited_on
+having count(t2.visited_on)=7
+order by t1.visited_on;                                    
                                     
-                                    
-                                    
-                                    
-                                    
-                                    
-                                    
-                                    
-                                    
-                                    
-                                    
-                                    
-                                    
-                                    
+#1369. Get the second most activity
+with tb1 as
+(select u1.username, u1.activity, u1.startdate , u1.enddate, count(*) as r
+from useractivity u1 join useractivity u2 on u1.username = u2.username AND u1.endDate <= u2.endDate
+group by 1.username, u1.activity, u1.startDate, u1.endDate) ,
+tb2 as
+(select username, count(*) as c from useractivity group by username)
+select tb1,username, tb1.activity, tb1.startdate, tb1.enddate
+from tb1 join tb2 on tb1.username=tb2.username 
+where tb1.r=tb2.c or tb2.c=1;                                   
+
+                                                                     
+                                                                     
+                                                                     
+                                                                     
+                                                                     
