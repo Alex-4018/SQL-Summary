@@ -171,6 +171,16 @@ select t.request_at as 'Day', cast(avg(case when status='completed' then 0 else 
 from trips as t inner join users c on t.client_id=c.user_id inner join users d on t.driver_id=d.user_id
 where c.banned='no' and d.banned='no' and t.request_at between '2013-10-01' and '2013-10-03'
 group by t.request_at;
+##############################
+with t1 as
+(select request_at, case when status='completed' then 0 else 1.0 end as status from trips t 
+ where client_id not in (select user_id from users where banned='Yes') and drivet_id not in  (select user_id from users where banned='Yes') 
+ and request_at between '2013-10-01' and '2013-10-03')
+select request_at as 'Day' cast(avg(status) as decimal(4,2)) as 'Cancellation Rate'
+from t1 
+group by request_at;
+
+
                                                                                                 
 #512. The earlist Game Play                                          
 select a.playrt_id, device_id from activity a 
@@ -187,7 +197,16 @@ where r=1;
 #550. Users who played in the second day.                                          
 select cast(count(distinct a2.player_id)*1.0/count(distinct a1.player_id) as decimal(3,2))  as fraction                                        
 from (select player_id, min(event_date) as event_date from activtity froup by player_id) a1
-left join activity a2 on a1.player_id=a2.player)id and datediff(day,a2.event_date,a1.event_date)=1;                                          
+left join activity a2 on a1.player_id=a2.player)id and datediff(day,a2.event_date,a1.event_date)=1;
+#################################
+with tb2 as
+(select player_id, from (
+                 select player_id, min(event_date) over (partition by player_id) as event_date, lead(event_date) over (partition by player_id order by event_date) as lead_date
+                  from activity)  tb1
+ where datediff(lead_date,event_date)=1)
+select cast(count(distinct player_id)*1.0/(select count(distinct player_id) from activity) as decimal(4,2)) as fraction
+from tb2;
+
                                           
 #570. Managers who manage more than 5 employees
 select e2.name from employee e1 join employee e2 on e1.manager_id=e2.id group by e2.id, e2.name having count(e1.id)>=5;                                          
@@ -488,7 +507,7 @@ select s.product_id as product_id, p.product_name as product_name,
 from cte join sales s on cte.date between s.period_start and s.period_end
          join products p on s,product_id=p.producct_id
 group by s.product_id, p.product_name, Year(cte.date)
-order by  product_id, report_year
+order by  product_id, report_year;
 
 
 Advanced Join
@@ -498,6 +517,10 @@ select distinct l1.num as consecutiveNums
 from logs l1
 join logs l2 on l1.id=l2.id-1 and l1.num=l2.num
 join logs l3 on l1.id=l3.id-2 and l1.num=l3.num;
+########################################
+select distinct num as consecutiveNums
+from (select num, lead(num) over(order by id) as next, lag(num) over (order by id) as prev from logs) tb1 
+where num=next and num=prev;
 
 
 #534. Game Play Analysis 3
@@ -535,7 +558,14 @@ where id in (select id1 id from tb1
              select id2 from tb1
              union 
              select id3 from tb1);
-                                   
+###################################
+with tb1 as 
+(select *, row_number() over (order by id) as r from staduim where people>=100),
+tb2 as
+(select id, visit_date, people, count(*) over (partition by id-r) as num from tb1)
+select id,visit_date,people from tb2 where num>=3;
+
+
 #603. Consecutive Availiable Seats
 select c2.seat_id
 from cinema c1 right join cinema c2 on c1.seat_id+1=c2.seat_id
@@ -772,6 +802,10 @@ Subquery
 select max(salary) as secondhighestsalary
 from employy
 where salary < (select max(salary) from employee);
+##############################
+select avg(salary) as secondhighestsalary
+from (select salary, dense_rank() over (order by salary desc) r from employee) tb1
+where r=2; 
 								    
 #571. Median given frequency of numbers
 with tb1 as 
@@ -925,21 +959,67 @@ with tb1 as
 (select activity, count(*) as num from friends group by activity)		
 select activity from tb1 where num not in (select max(num) from tb1 union all select min(num) from tb1);						     
 								     
+Advanced Subquery								     
+####################################								     
+#585. Investment in 2016
+select cast(sum(tiv_2016) as decimal(10,2)) as TIV_2016
+from (select tiv_2016, count(*) over (partition by tiv_2015) as count_2015, count(*) over (partition by lat, lon) as count_loc
+      from insurance) tb1
+where count_2015>1 and count_loc=1;
+###################################					     
+select cast(sum(tiv_2016) as decimal(10,2)) as TIV_2016 from insurance
+where tic_2015 in (select tiv_2015 from insurance group by tiv_2015 having count(*)>1)
+and concat(lat,'_',lon) in (select concat(lat,'_',lon) from insurance group by lat, lon having count(*)=1);								     
 								     
+#597. Friend Request 1
+with send as
+(select distinct sneder_id, send_to_id from friend_request),
+accept as 
+(select distinct requester_id, accepter_id from request_accepted)
+select case when (select count(*) from send)=0 then 0.0 else cast(select count(*) from accept)*1.0/(select count(*) from send) as decimal (3,2))
+end as accept_rate;
+######################################
+select round(if(requests = 0, 0, accepts / requests), 2) as accept_rate
+from (select count(distinct sender_id, send_to_id) as requests from friend_request) as r,
+  (select count(distinct requester_id, accepter_id) as accepts from request_accepted) as a; 								     
 								     
+#1398. Customers who bought products A and B but not C
+with tb1 as (select distinct customer_id, product_name, case when product_name in ('A','B') then 1 when product_name='C' then -1 else 0 end as c from orders)
+select * from customers where customer_id in (select customer_id from tb1 group by customer_id having sum(c)=2);
+##################################
+select * from customers where customer_id in (select customer_id from orders where product_name='A') 
+                          and customer_id in (select customer_id from orders where product_name='B')
+                          and customer_id not in (select customer_id from orders where product_name='C');
+
+Window Fuction
+#####################################                          								     
+#177. Nth Highest Salary
+create function getNthHighestSalary(N INT) RETURNS INT
+begin
+  declare M INT;
+  set M = N - 1;
+  return (
+    # Write your MySQL query statement below.
+    select distinct Salary
+    from Employee
+    order by Salary desc
+    limit 1 offset M
+  );
+end
+################################								     
+create function getNthHighestSalary(@N INT) RETURNS INT AS
+begin
+    return (
+        select AVG(salary)
+        from ( SELECT salary, DENSE_RANK() over (ORDER BY salary DESC) r FROM employee) tb1
+        where r = @N);
+end								     
 								     
+#178. Rank Scores
+select score, dense_rank() over(order by score desc) as rank from scores;								     
 								     
-								     
-								     
-								     
-								     
-								     
-								     
-								     
-								     
-								     
-								     
-								     
+#185. Department Top three salaries
+select								     
 								     
 								     
 								     
