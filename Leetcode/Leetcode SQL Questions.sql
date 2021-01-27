@@ -164,7 +164,11 @@ where r=1;
 
 #197. Rising Temperature
 select w2.id from weather w1 join weather w2 on datediff(day,w2.recorddate,w1.recorddate)=1
-where w1.temperature<w2.temperature;                                        
+where w1.temperature<w2.temperature;
+##############################
+select id from
+(select *, lag(temperature) over (order by recorddate) as prev_temp, lag(recorddate) over (order by recorddate) as pred_date) from weather) tb1
+where datediff(recorddate, prev_date)=1 and prev_temp<temperature;                                        
                                           
 #262. Trips Cancellation Rate for unbanned users
 select t.request_at as 'Day', cast(avg(case when status='completed' then 0 else 1.0 end) as decimal(3,2)) as 'Cancellation Rate'
@@ -443,6 +447,8 @@ join countries on c.country_id=w.country_id;
 select e1.employee_id, count(*) as team_size
 from employee e1 join employee e2 on e1.team_id=e2.team_id
 group by e1.employee_id;
+###############################
+select employee_id , count(*) over (partition by team_id ) as team_size from employee;
 
 #1327. List the Products ordered in a period
 select min(p.product_name) as product_name, sum(unit) as unit
@@ -527,12 +533,21 @@ where num=next and num=prev;
 select a1.player_id, a1.event_date, sum(a2.games_played) as games_played_sofar
 from activity a1 join activity a2 on a1.player_id=a2.player_id and a1.event_date>=a2.event_date
 group by a1.player_id, a1.event_date;
+######################################
+select player_id, event_date, sum(games_played) over (partition by player_id order by event_date) as game_played_sofar) 
+from activity;
+ 
                                    
 #569. Median Employee Salary
 with tb1 as 
 (select e1.id, e1.employee,e1.salary, count(*) as r, (select count(*) from employee where company=e1.company) as num)
 from employee e1, join employee e2 on e1.company=e2.company and (e1.salary >e2.salary or (e1.salary = e2.salary AND e1.id >= e2.id))
 order by e1.id, e1.employee,e1.salary)
+select id, company, salary
+from tb1 where r between num*1.0/2 and num*1.0/2+1;
+####################################
+with tb1 as 
+(select *, row_number() over(partition by company order by salary) as r, count(*) over (partition by company) as num from employee)
 select id, company, salary
 from tb1 where r between num*1.0/2 and num*1.0/2+1;
 
@@ -651,7 +666,7 @@ from users u left join tb1 on u.user_id=tb1.seller_id left join items i on i.ite
 
 #1194. Tournament_winners
 with tb1 as
-(select first_player as player, first_score as score from matches union select second_player, second_score from matches),
+(select first_player as player, first_score as score from matches union all select second_player, second_score from matches),
 tb2 as
 (select p.player_id, p.group_id, sum(tb1.score) as tp
 from players p left join tb1 on p.player_id=tb1.player
@@ -766,7 +781,12 @@ from scores s1
 join scores s2
 on s1.gender=s2.gender and s1.day>=s2.day
 group by s1.gender,s1.day
-order by s1.gender,s1.day;                                     
+order by s1.gender,s1.day;
+###############################
+select distinct gender, day, sum(score_point) over (partition by gender order by day) as total
+from scores
+order by gender, day;
+
                                     
 #1321. Restaurant Growth
 with total as
@@ -777,7 +797,14 @@ select t1.visited_on, sum(t2.amount) as amount, cast(avg(t2.amount*1.0) as decim
 from total t1 join total t2 on t1.visited_on>=t2,visited_on and t1.visited_on<= date_add(t2.visited_on, interval 6 day)
 group by t1.visited_on
 having count(t2.visited_on)=7
-order by t1.visited_on;                                    
+order by t1.visited_on; 
+#################################
+select visit_on, sum(sum(amount)) over(order by visited_on rows betweenn 6 preceding and current row) as amount) ,
+       cast(sum(sum(amount)) over (order by visited_on rows betweenn 6 preceding and current row)/7.0 as decimal(10,2) ) as average_amount
+from customer 
+group by visited_on
+order by visited_on
+offset 6;
                                     
 #1369. Get the second most activity
 with tb1 as
@@ -806,7 +833,11 @@ where salary < (select max(salary) from employee);
 select avg(salary) as secondhighestsalary
 from (select salary, dense_rank() over (order by salary desc) r from employee) tb1
 where r=2; 
-								    
+###############################
+select ifnull((select distinct Salary from Employee order by Salary desc limit 1 offset 1), null)
+as SecondHighestSalary;
+
+
 #571. Median given frequency of numbers
 with tb1 as 
 (select * ,sum(frequency) over (order by number) as cum_num, sum(frequency) over () as num from numbers)
@@ -901,7 +932,8 @@ with tb1 as
 where activity_date betweeen data_sub('2019-07-27', interval 29 day) and '2019-07-27'
 group by user_id)
 select cast(isnull(avg(num*1.0),0) as decimal(10,2)) as average_sessions_per_user
-from tb1;								     
+from tb1;
+							     
 
 #1174. Immediate food delivery
 with tb1 as 
@@ -923,7 +955,13 @@ where user_id in (select * from f) and page_id not in (select page_id from likes
 select ad_id, round(if(clicks + views = 0, 0, clicks / (clicks + views) * 100), 2) as ctr
 from (select ad_id, sum(if(action='Clicked', 1, 0)) as clicks, sum(if(action='Viewed', 1, 0)) as views
       from Ads group by ad_id) as a
-order by ctr desc, ad_id asc;	
+order by ctr desc, ad_id asc;
+#############################
+select ad_id, cast(isnull(avg(case when action='Clicked' then 100.0 when action='Viewed' then 0 else Null end),0) as decimal(5,2)) as ctr
+from ads
+group by ad_di
+order by ctr desc, ad_id; 
+
 							     
 #1341. Movie Rating
 select min(name) AS results from Users where user_id in ( select user_id from (
@@ -981,7 +1019,14 @@ end as accept_rate;
 ######################################
 select round(if(requests = 0, 0, accepts / requests), 2) as accept_rate
 from (select count(distinct sender_id, send_to_id) as requests from friend_request) as r,
-  (select count(distinct requester_id, accepter_id) as accepts from request_accepted) as a; 								     
+  (select count(distinct requester_id, accepter_id) as accepts from request_accepted) as a;
+######################################
+select cast(case when count(distinct concat(sender_id,'_',send_to_id)=0 then 0
+            else count(distinct concat(request_id,'_',accepter_id))*1.0/count(distinct concat(sender_id,'_',send_to_id))
+            end as decimal(3,2)) as accept_rate
+from request_accepted, friend_request;
+
+
 								     
 #1398. Customers who bought products A and B but not C
 with tb1 as (select distinct customer_id, product_name, case when product_name in ('A','B') then 1 when product_name='C' then -1 else 0 end as c from orders)
@@ -1019,11 +1064,85 @@ end
 select score, dense_rank() over(order by score desc) as rank from scores;								     
 								     
 #185. Department Top three salaries
-select								     
+select department, employee, salary from 
+(select d.name as department, e.name as employee, salary, dense_rank() over(partition by department order by salary desc) as t 
+ from employee e join department d on e.department_id=d.id) as tb1
+where r<=3;								     
 								     
+Case When								     
+#############################################################								     
+#610. Triangle Judgement
+select *, case when x+y>z and y+z>x and z+x>y then 'Yes'
+          else 'No' End as triangle
+from triangle;
+
+#1173. Immediate Food Delivery
+select cast(avg(case when order_date=customoer_pref_delivery then 100.0 else 0 end) as decimal(5,2) ) as immediate_percentage
+from delivery;
+
+
+#1193. Monthly Transactions
+select left(trans_date,7) ---format(trans_date, 'yyyy-mm') --- as month, country, count(id) as trans_count,
+       sum(case when state='approved' then 1 else 0 end) as approved_count,
+       sum(amount) as trans_total_amount,
+       sum(case when state='approved' then amount else 0 end) as approved_total_amount
+from transcations group by left(trans_date,7), country;
+
+
+#1211. Queries Quality and Percentage
+select query_name, cast(avg(rating*1.0/position) as decimal(10,2)) as quality,
+                   cast(avg(case when rating < 3 then 100.0 else 0 end) as decimal(10,2)) as poor_query_perct
+from queries
+group by query_name;
+
+#1393. Capital Gain and Loss
+select stock_name, sum(case when operation='Buy' then -price else price end) as capital_gain_loss
+from stocks
+group by stock_name;
+
+#602. Friends Request
+
+select  top 1 id1, count(*) as num 
+from  (select requester_id as id1, accepter_id as id2 from request_accepted
+       union all
+       select accepter_id as id1, requester_id as id2 from request_accepted) as tpl
+group by id1
+order by num desc;
+
+
+#1179. Reformat Department Table
+select
+  id,
+  sum(if(month = 'Jan', revenue, null)) as Jan_Revenue,
+  sum(if(month = 'Feb', revenue, null)) as Feb_Revenue,
+  sum(if(month = 'Mar', revenue, null)) as Mar_Revenue,
+  sum(if(month = 'Apr', revenue, null)) as Apr_Revenue,
+  sum(if(month = 'May', revenue, null)) as May_Revenue,
+  sum(if(month = 'Jun', revenue, null)) as Jun_Revenue,
+  sum(if(month = 'Jul', revenue, null)) as Jul_Revenue,
+  sum(if(month = 'Aug', revenue, null)) as Aug_Revenue,
+  sum(if(month = 'Sep', revenue, null)) as Sep_Revenue,
+  sum(if(month = 'Oct', revenue, null)) as Oct_Revenue,
+  sum(if(month = 'Nov', revenue, null)) as Nov_Revenue,
+  sum(if(month = 'Dec', revenue, null)) as Dec_Revenue
+from Department
+group by id;
 								     
-								     
-								     
-								     
-								     
-								     
+#1113. Reported Posts
+select extra as report_reason, count(distinct post_id) as report_count
+from Actions
+where action_date = '2019-07-04' and action = 'report'
+group by extra;
+
+
+
+
+
+
+
+
+
+
+
+
+
